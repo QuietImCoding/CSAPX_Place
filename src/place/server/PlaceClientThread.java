@@ -32,6 +32,9 @@ public class PlaceClientThread implements Runnable, Closeable {
 
         }
     }
+    public void changed(){
+
+    }
     public void run(){
         try{
 

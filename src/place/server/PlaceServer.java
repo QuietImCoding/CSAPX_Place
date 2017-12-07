@@ -29,7 +29,7 @@ public class PlaceServer implements Closeable{
         }
 
     }
-    public synchronized void sendBoard(){
+    public void sendBoard(){
         Iterator it = clientMap.keySet().iterator();
         while(it.hasNext()){
             try{
