@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 /**
  * This is the class that represents the requests that are transmitted between
- * the place.server and clients.  These objects will be sent and received using
  * PlaceExchange.
  *
  * @param <E> the data type (depends on the request type):<br>
@@ -35,10 +34,10 @@ public class PlaceRequest<E extends Serializable> implements Serializable {
         CHANGE_TILE,
 
         /**
-         * Used for the place.server to tell the place.client there was an error.  It will
+         * Used for the server to tell the client there was an error.  It will
          * contain a message about the error. One place this is used is to tell
-         * the place.client a login failed (because the username already exists).  It
-         * is also used to indicate the place.server is shutting down, or any other
+         * the client a login failed (because the username already exists).  It
+         * is also used to indicate the server is shutting down, or any other
          * unusual things happen.
          */
         ERROR,

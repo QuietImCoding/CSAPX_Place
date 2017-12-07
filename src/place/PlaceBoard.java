@@ -3,9 +3,6 @@ package place;
 import java.io.Serializable;
 
 /**
- * The board is the place that holds the colored tiles.  The place.server creates
- * the initial Board and then transmits it only once to each place.client that
- * successfully logs in to the place.server.
  *
  * @author Sean Strout @ RIT CS
  */
