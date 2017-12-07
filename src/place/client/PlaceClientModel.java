@@ -1,5 +1,6 @@
 package place.client;
 
+// testing testing 1 2
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import place.PlaceBoard;
@@ -28,6 +29,8 @@ public class PlaceClientModel implements Observable {
             System.out.println();
         }
     }
+
+
 
     public void login() {
         try {
