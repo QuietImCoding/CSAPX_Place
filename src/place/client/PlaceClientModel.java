@@ -1,8 +1,6 @@
 package place.client;
 
-// testing testing 1 2
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
 import place.PlaceBoard;
 import place.network.PlaceRequest;
 
@@ -10,8 +8,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Observable;
 
-public class PlaceClientModel implements Observable {
+public class PlaceClientModel extends Observable {
 
     private PlaceBoard board;
     private Socket conn;
@@ -31,13 +30,16 @@ public class PlaceClientModel implements Observable {
     }
 
 
-
     public void login() {
         try {
             out.writeObject(new PlaceRequest<String>(PlaceRequest.RequestType.LOGIN, username));
             PlaceRequest<?> confirm = (PlaceRequest<?>) in.readObject();
             if (confirm.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
-                board = new
+                PlaceRequest<?> boardData = (PlaceRequest<?>) in.readObject();
+                if (boardData.getType() == PlaceRequest.RequestType.BOARD) {
+                    board = (PlaceBoard)boardData.getData();
+                    notifyObservers();
+                }
             }
         } catch (IOException ioe) {
             System.out.println("YOU MESSED UP SOMETHING");
@@ -46,14 +48,8 @@ public class PlaceClientModel implements Observable {
         }
     }
 
-    @Override
-    public void addListener(InvalidationListener listener) {
-
-    }
-
-    @Override
-    public void removeListener(InvalidationListener listener) {
-
+    public void update() {
+        notifyObservers();
     }
 
     public static void main(String[] args) {
