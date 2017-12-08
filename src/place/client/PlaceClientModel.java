@@ -2,6 +2,7 @@ package place.client;
 
 import place.PlaceBoard;
 import place.PlaceColor;
+import place.PlaceException;
 import place.PlaceTile;
 import place.network.PlaceRequest;
 
@@ -15,7 +16,7 @@ import java.util.Observer;
 public class PlaceClientModel extends Observable {
 
     private PlaceBoard board;
-    private Socket conn;
+    //private Socket conn;
     private String username;
     private ObjectInputStream in;
     private ObjectOutputStream out;
@@ -23,7 +24,7 @@ public class PlaceClientModel extends Observable {
     public PlaceClientModel(String host, int port, String username) {
         this.username = username;
         try {
-            conn = new Socket(host, port);
+            Socket conn = new Socket(host, port);
             in = new ObjectInputStream(conn.getInputStream());
             out = new ObjectOutputStream(conn.getOutputStream());
         } catch (IOException ioe) {
@@ -32,9 +33,10 @@ public class PlaceClientModel extends Observable {
     }
 
 
-    public boolean login() {
+    public boolean login() throws PlaceException {
         try {
             out.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, username));
+            out.flush();
             PlaceRequest<?> confirm = (PlaceRequest<?>) in.readObject();
             if (confirm.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
                 PlaceRequest<?> boardData = (PlaceRequest<?>) in.readObject();
@@ -43,10 +45,8 @@ public class PlaceClientModel extends Observable {
                     return true;
                 }
             }
-        } catch (IOException ioe) {
-            System.out.println("YOU MESSED UP SOMETHING");
-        } catch (ClassNotFoundException cnfe) {
-            System.out.println("I have never seen this exception in my lief");
+        } catch (IOException | ClassNotFoundException ioe) {
+            throw new PlaceException("Login failed");
         }
         return false;
     }
@@ -60,6 +60,7 @@ public class PlaceClientModel extends Observable {
         PlaceRequest<PlaceTile> tileChange = new PlaceRequest<>(PlaceRequest.RequestType.CHANGE_TILE, toPlace);
         try {
             out.writeObject(tileChange);
+            out.flush();
         } catch (IOException ioe) {
             System.out.println("Failed to write tile");
         }
