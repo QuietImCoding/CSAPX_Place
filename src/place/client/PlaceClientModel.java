@@ -11,12 +11,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Observable;
-import java.util.Observer;
 
 public class PlaceClientModel extends Observable {
 
     private PlaceBoard board;
-    //private Socket conn;
+    private Socket conn;
     private String username;
     private ObjectInputStream in;
     private ObjectOutputStream out;
@@ -24,17 +23,22 @@ public class PlaceClientModel extends Observable {
     public PlaceClientModel(String host, int port, String username) {
         this.username = username;
         try {
-            Socket conn = new Socket(host, port);
+            conn = new Socket(host, port);
+            System.out.println("Setting up sockets");
+            System.out.println("Getting input stream...");
             in = new ObjectInputStream(conn.getInputStream());
+            System.out.println("Getting output stream...");
             out = new ObjectOutputStream(conn.getOutputStream());
         } catch (IOException ioe) {
-            System.out.println();
+            System.out.println(ioe.getMessage());
         }
     }
 
 
     public boolean login() throws PlaceException {
+        System.out.println("Trying to login");
         try {
+            System.out.println("Sending login request");
             out.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, username));
             out.flush();
             PlaceRequest<?> confirm = (PlaceRequest<?>) in.readObject();
@@ -42,6 +46,7 @@ public class PlaceClientModel extends Observable {
                 PlaceRequest<?> boardData = (PlaceRequest<?>) in.readObject();
                 if (boardData.getType() == PlaceRequest.RequestType.BOARD) {
                     board = (PlaceBoard)boardData.getData();
+                    System.out.println("Successfully logged in!");
                     return true;
                 }
             }
@@ -52,7 +57,18 @@ public class PlaceClientModel extends Observable {
     }
 
     public void talkToServer() {
-        Thread netThread = new Thread( () -> this.run() );
+        Thread netThread = new Thread(this::run);
+        netThread.start();
+    }
+
+    public void logoff() {
+        try {
+            in.close();
+            out.close();
+            conn.close();
+        } catch (IOException ioe) {
+            System.out.println(ioe.getMessage());
+        }
     }
 
     public void sendTileChange(int row, int col, PlaceColor color) {
@@ -66,20 +82,22 @@ public class PlaceClientModel extends Observable {
         }
     }
 
-    public void run() {
+    private void run() {
         try {
             PlaceRequest<?> req = (PlaceRequest<?>) in.readObject();
-            while (req.getType() != PlaceRequest.RequestType.ERROR) {
+            while (conn.isConnected() && req.getType() != PlaceRequest.RequestType.ERROR) {
                 if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
                     board.setTile((PlaceTile) req.getData());
                     setChanged();
                     notifyObservers();
                 }
+                PlaceRequest<?> newReq = (PlaceRequest<?>) in.readObject();
+                if (newReq.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
+                    req = newReq;
+                }
             }
-        } catch (IOException ioe) {
-            System.out.println("YOU MESSED UP SOMETHING");
-        } catch (ClassNotFoundException cnfe) {
-            System.out.println("I have never seen this exception in my lief");
+        } catch (IOException | ClassNotFoundException ioe) {
+            System.out.println(ioe);
         }
     }
 

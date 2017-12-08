@@ -21,7 +21,7 @@ public class PlaceGUI implements Observer, PlaceClient {
     }
 
     @Override
-    public boolean getUserInput(String prompt) {
+    public boolean getUserInput() {
         return true;
     }
 }

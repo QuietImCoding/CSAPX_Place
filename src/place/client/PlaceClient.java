@@ -9,8 +9,7 @@ public interface PlaceClient {
 
     /**
      * Get the user to input something
-     * @param prompt Telling the user what to do
      */
-    boolean getUserInput(String prompt);
+    boolean getUserInput();
 
 }

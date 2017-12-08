@@ -26,22 +26,14 @@ public class PlacePTUI implements Observer, PlaceClient {
         model.talkToServer();
     }
 
-    private boolean sendMove(String in) throws PlaceException{
-        String[] tokens = in.split("\\s");
-        if (tokens.length < 3) {
-            throw new PlaceException("Invalid User Input");
-        } else if (tokens[0].equals("-1")){
-            return false;
-        }
-        model.sendTileChange(Integer.parseInt(tokens[0]), Integer.parseInt(tokens[1]), PlaceColor.values()[Integer.parseInt(tokens[2])]);
+    private boolean sendMove(int row, int col, int color) throws PlaceException{
+        model.sendTileChange(row, col, PlaceColor.values()[color]);
         return true;
     }
 
     @Override
     public void update(Observable o, Object arg) {
-        if (o instanceof PlaceClientModel) {
-            display();
-        }
+
     }
 
     @Override
@@ -50,13 +42,20 @@ public class PlacePTUI implements Observer, PlaceClient {
     }
 
     @Override
-    public boolean getUserInput(String prompt) {
-        System.out.print(prompt);
+    public boolean getUserInput() {
+        System.out.print("What would you like to do? (view / move) ");
         String input = userIn.nextLine();
-        try {
-            return sendMove(input);
-        } catch (PlaceException pe) {
-            System.out.println(pe.getMessage());
+        String[] tokens = input.split("\\s");
+        if (tokens[0].equals("view")) {
+            display();
+            System.out.println();
+            return true;
+        } else if (tokens[0].equals("move")) {
+            try {
+                return sendMove(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
+            } catch (PlaceException pe) {
+                System.out.println(pe.getMessage());
+            }
         }
         return false;
     }
