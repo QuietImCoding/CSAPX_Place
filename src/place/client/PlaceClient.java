@@ -11,6 +11,6 @@ public interface PlaceClient {
      * Get the user to input something
      * @param prompt Telling the user what to do
      */
-    void getUserInput(String prompt);
+    boolean getUserInput(String prompt);
 
 }
