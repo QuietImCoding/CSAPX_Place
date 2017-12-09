@@ -16,6 +16,7 @@ public class PlaceClientThread implements Runnable, Closeable {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private PlaceBoard board;
+    private PlaceServer server;
 //    public PlaceClientThread(String hostname, int port, PlaceBoard model){
 //
 //        try{
@@ -31,43 +32,74 @@ public class PlaceClientThread implements Runnable, Closeable {
 //        }
 //    }
 
-    public PlaceClientThread(Socket socket){
-        this.sock = sock;
+    public PlaceClientThread(Socket socket, String username, PlaceServer server){
+        this.sock = socket;
+        this.username = username;
+        System.out.println("User " + username +" connected on socket "+sock);
+        this.board = board;
+        this.server = server;
         try {
-            this.in = new ObjectInputStream(sock.getInputStream());
             this.out = new ObjectOutputStream(sock.getOutputStream());
+            this.in = new ObjectInputStream(sock.getInputStream());
         }
         catch (IOException e) {
         }
     }
-
+    public void addBoard(PlaceBoard board){
+        this.board = board;
+    }
     public void changed(PlaceTile tile){
         PlaceRequest<PlaceTile> tileChange = new PlaceRequest<>(PlaceRequest.RequestType.CHANGE_TILE, tile);
         try{
             out.writeObject(tileChange);
+            out.flush();
         }catch(IOException e){
 
         }
     }
+
+    public ObjectOutputStream getOut() {
+        return out;
+    }
+
+
     public void run(){
         try{
             boolean listening = true;
+            PlaceRequest<?> req;
             while(listening){
-                PlaceRequest<?> req = (PlaceRequest<?>)in.readObject();
-                if(req.getType() == PlaceRequest.RequestType.LOGIN){
-                    username = (String)req.getData();
-                    login();
+                try{
+                    req = (PlaceRequest<?>)in.readObject();
+
+                System.out.println(req);
+                PlaceRequest.RequestType type = req.getType();
+                System.out.println(type);
+                switch(type) {
+                    case LOGIN: {
+                        username = (String) req.getData();
+                        server.login(username, out);
+                        req = new PlaceRequest<>(PlaceRequest.RequestType.BOARD, board);
+                        out.writeObject(req);
+                        out.flush();
+                    }
+                    case CHANGE_TILE: {
+                        server.tileChange((PlaceTile) req.getData());
+                        board = server.getBoard();
+
+
+                    }
+                    default: {
+                        req = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "???");
+                        out.writeObject(req);
+                        out.flush();
+                    }
                 }
 
+                }catch(Exception e){
 
+                }
             }
         }catch(Exception e){}
-    }
-    public String getUserName(){
-        return username;
-    }
-    public void login(){
-        //ask server to log in
     }
     public void start(){
         this.run();
