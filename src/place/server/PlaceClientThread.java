@@ -88,6 +88,10 @@ public class PlaceClientThread implements Runnable, Closeable {
 
 
                     }
+                    case ERROR:{
+                        server.updateClients(username);
+                        close();
+                    }
                     default: {
                         req = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "???");
                         out.writeObject(req);
