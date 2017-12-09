@@ -18,7 +18,7 @@ public class PlacePTUI implements Observer, PlaceClient {
        model = new PlaceClientModel(host, port, username);
        model.addObserver(this);
        userIn = new Scanner(System.in);
-        try {
+       try {
             model.login();
         } catch (PlaceException pe) {
             System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
