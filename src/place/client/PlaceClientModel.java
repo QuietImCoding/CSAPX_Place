@@ -35,7 +35,7 @@ public class PlaceClientModel extends Observable {
     }
 
 
-    public boolean login() throws PlaceException {
+    public void login() throws PlaceException {
         System.out.println("Trying to login");
         try {
             System.out.println("Sending login request");
@@ -47,13 +47,11 @@ public class PlaceClientModel extends Observable {
                 if (boardData.getType() == PlaceRequest.RequestType.BOARD) {
                     board = (PlaceBoard)boardData.getData();
                     System.out.println("Successfully logged in!");
-                    return true;
                 }
             }
         } catch (IOException | ClassNotFoundException ioe) {
             throw new PlaceException("Login failed");
         }
-        return false;
     }
 
     public void talkToServer() {
@@ -87,9 +85,10 @@ public class PlaceClientModel extends Observable {
             PlaceRequest<?> req = (PlaceRequest<?>) in.readObject();
             while (conn.isConnected() && req.getType() != PlaceRequest.RequestType.ERROR) {
                 if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
-                    board.setTile((PlaceTile) req.getData());
+                    PlaceTile changedTile = (PlaceTile) req.getData();
+                    board.setTile(changedTile);
                     setChanged();
-                    notifyObservers();
+                    notifyObservers(changedTile);
                 }
                 PlaceRequest<?> newReq = (PlaceRequest<?>) in.readObject();
                 if (newReq.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
