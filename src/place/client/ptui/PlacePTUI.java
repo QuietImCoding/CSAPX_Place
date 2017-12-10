@@ -1,62 +1,23 @@
 package place.client.ptui;
 
-import place.PlaceColor;
-import place.PlaceException;
 import place.client.PlaceClient;
-import place.client.PlaceClientModel;
 
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Scanner;
-
-public class PlacePTUI implements Observer, PlaceClient {
-
-    private final Scanner userIn;
-    private final PlaceClientModel model;
-
-    public PlacePTUI(String host, int port, String username) {
-       model = new PlaceClientModel(host, port, username);
-       model.addObserver(this);
-       userIn = new Scanner(System.in);
-       try {
-            model.login();
-        } catch (PlaceException pe) {
-            System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
+public class PlacePTUI {
+    public static void main(String[] args) {
+        if (args.length < 3) {
+            System.out.println("Input should be formatted java PlacePTUI <host> <port> <username>");
+            return;
         }
-        model.talkToServer();
-    }
+        PlaceClient client = new PlaceTextApp(args[0], Integer.parseInt(args[1]), args[2]);
+        System.out.println("Welcome to Place!");
+        System.out.println("When asked what to do, you can either type 'view' or 'move <row> <col> <color>'");
+        System.out.println("Typing 'view' will print out the current board");
+        System.out.println("Typing 'move <row> <col> <color> will place a tile at that spot with that color");
+        System.out.println("Colors should be numbers 0 - 15");
 
-    private boolean sendMove(int row, int col, int color) throws PlaceException{
-        model.sendTileChange(row, col, PlaceColor.values()[color]);
-        return true;
-    }
-
-    @Override
-    public void update(Observable o, Object arg) {
-
-    }
-
-    @Override
-    public void display() {
-        System.out.println(model.getBoard());
-    }
-
-    @Override
-    public boolean getUserInput() {
-        System.out.print("What would you like to do? (view / move) ");
-        String input = userIn.nextLine();
-        String[] tokens = input.split("\\s");
-        if (tokens[0].equals("view")) {
-            display();
-            System.out.println();
-            return true;
-        } else if (tokens[0].equals("move")) {
-            try {
-                return sendMove(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
-            } catch (PlaceException pe) {
-                System.out.println(pe.getMessage());
-            }
+        boolean running = true;
+        while (running) {
+            running = client.getUserInput();
         }
-        return false;
     }
 }

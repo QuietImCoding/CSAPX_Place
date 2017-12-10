@@ -76,7 +76,7 @@ public class PlaceClientModel extends Observable {
             out.writeObject(tileChange);
             out.flush();
         } catch (IOException ioe) {
-            System.out.println("Failed to write tile");
+            System.out.println("Failed to write tile: " + ioe.getMessage());
         }
     }
 

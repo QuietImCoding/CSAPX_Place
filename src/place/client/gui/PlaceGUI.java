@@ -13,14 +13,13 @@ import place.PlaceBoard;
 import place.PlaceColor;
 import place.PlaceException;
 import place.PlaceTile;
-import place.client.PlaceClient;
 import place.client.PlaceClientModel;
 
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-public class PlaceGUI extends Application implements Observer, PlaceClient {
+public class PlaceGUI extends Application implements Observer {
 
     private PlaceClientModel model;
     private int boardDim;
@@ -56,10 +55,6 @@ public class PlaceGUI extends Application implements Observer, PlaceClient {
         }
     }
 
-    @Override
-    public void display() {
-    }
-
     private void drawTile(PlaceTile t) {
         float moveDist = dim / boardDim;
         PlaceColor fill = t.getColor();
@@ -79,11 +74,6 @@ public class PlaceGUI extends Application implements Observer, PlaceClient {
                 gc.fillRect(x * moveDist, y * moveDist, moveDist, moveDist);
             }
         }
-    }
-
-    @Override
-    public boolean getUserInput() {
-        return true;
     }
 
     private void sendTile(double x, double y) {
