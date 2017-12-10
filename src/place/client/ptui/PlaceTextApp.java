@@ -2,14 +2,13 @@ package place.client.ptui;
 
 import place.PlaceColor;
 import place.PlaceException;
-import place.client.PlaceClient;
 import place.client.PlaceClientModel;
 
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Scanner;
 
-public class PlaceTextApp implements Observer, PlaceClient {
+public class PlaceTextApp implements Observer {
 
     private final Scanner userIn;
     private final PlaceClientModel model;
@@ -26,36 +25,43 @@ public class PlaceTextApp implements Observer, PlaceClient {
         model.talkToServer();
     }
 
-    private boolean sendMove(int row, int col, int color) throws PlaceException{
-        model.sendTileChange(row, col, PlaceColor.values()[color]);
-        return true;
+    private void sendMove(String row, String col, String color) throws PlaceException{
+        try {
+            int colorIndex = Integer.parseInt(color);
+            model.sendTileChange(Integer.parseInt(row), Integer.parseInt(col), PlaceColor.values()[colorIndex]);
+        } catch (NumberFormatException nfe) {
+            System.out.println("Colors should be numbers 0 - 15");
+        }
+    }
+
+    public void quit() {
+        model.logoff();
     }
 
     @Override
     public void update(Observable o, Object arg) {
-
     }
 
-    @Override
-    public void display() {
+    private void display() {
         System.out.println(model.getBoard());
     }
 
-    @Override
     public boolean getUserInput() {
-        System.out.print("What would you like to do? (view / move) ");
+        System.out.print("What would you like to do? ");
         String input = userIn.nextLine();
         String[] tokens = input.split("\\s");
         if (tokens[0].equals("view")) {
             display();
             System.out.println();
             return true;
-        } else if (tokens[0].equals("move")) {
+        } else if (tokens[0].equals("move") && tokens.length == 3) {
             try {
-                return sendMove(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
+                sendMove(tokens[0], tokens[1], tokens[2]);
             } catch (PlaceException pe) {
                 System.out.println(pe.getMessage());
             }
+        } else if (!tokens[0].equals("exit")) {
+            return true;
         }
         return false;
     }

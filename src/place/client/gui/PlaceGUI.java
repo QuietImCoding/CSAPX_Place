@@ -25,10 +25,10 @@ public class PlaceGUI extends Application implements Observer {
     private int boardDim;
     private PlaceColor curColor;
     private int dim;
+    private double tileWidth;
     private GraphicsContext gc;
-
-    public PlaceGUI() {
-    }
+    private boolean holdingTile;
+    private double mouseX, mouseY;
 
     @Override
     public void init() {
@@ -37,6 +37,7 @@ public class PlaceGUI extends Application implements Observer {
         int port = Integer.parseInt(args.get(1));
         String username = args.get(2);
         curColor = PlaceColor.WHITE;
+        holdingTile = false;
         model = new PlaceClientModel(host, port, username);
         model.addObserver(this);
         dim = 512;
@@ -51,36 +52,40 @@ public class PlaceGUI extends Application implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (o instanceof PlaceClientModel && arg instanceof PlaceTile) {
-            drawTile((PlaceTile)arg);
+            drawTile((PlaceTile) arg);
         }
     }
 
     private void drawTile(PlaceTile t) {
-        float moveDist = dim / boardDim;
+        tileWidth = dim / boardDim;
         PlaceColor fill = t.getColor();
         gc.setFill(Color.rgb(fill.getRed(), fill.getGreen(), fill.getBlue()));
-        gc.fillRect(t.getCol() * moveDist, t.getRow() * moveDist, moveDist, moveDist);
+        gc.fillRect(t.getCol() * tileWidth, t.getRow() * tileWidth, tileWidth, tileWidth);
     }
 
     private void drawModel() {
         PlaceBoard board = model.getBoard();
         boardDim = board.DIM;
-        float moveDist = dim / boardDim;
+        tileWidth = dim / boardDim;
         for ( int x = 0; x < boardDim; x++ ) {
             for ( int y = 0; y < boardDim; y++) {
                 PlaceTile toDraw = board.getTile(x, y);
                 PlaceColor fill = toDraw.getColor();
                 gc.setFill(Color.rgb(fill.getRed(), fill.getGreen(), fill.getBlue()));
-                gc.fillRect(x * moveDist, y * moveDist, moveDist, moveDist);
+                gc.fillRect(y * tileWidth, x * tileWidth, tileWidth, tileWidth);
             }
         }
     }
 
-    private void sendTile(double x, double y) {
+    private void sendTile(int col, int row) {
+        model.sendTileChange(row, col, curColor);
+    }
+
+    private int[] findTileTarget(double x, double y) {
         float width = dim / boardDim;
-        int tileX = (int)Math.floor(x / width);
-        int tileY = (int)Math.floor(y / width);
-        model.sendTileChange(tileY, tileX, curColor);
+        int tileX = (int)Math.floor(x / tileWidth);
+        int tileY = (int)Math.floor(y / tileWidth);
+        return new int[] {tileX, tileY};
     }
 
     private void setUpColorPicker() {
@@ -104,16 +109,24 @@ public class PlaceGUI extends Application implements Observer {
         Group root = new Group();
         Canvas canvas = new Canvas(dim , dim + 32);
         gc = canvas.getGraphicsContext2D();
+
         drawModel();
         canvas.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 t -> {
                     if (t.getY() < dim) {
-                        sendTile(t.getX(), t.getY());
+                        int[] target = findTileTarget(t.getX(), t.getY());
+                        sendTile(target[0], target[1]);
                     }
                     else {
                         pickColor(t.getX());
                     }
                 });
+        canvas.addEventHandler(MouseEvent.MOUSE_MOVED,
+            t -> {
+                mouseX = t.getX();
+                mouseY = t.getY();
+            }
+        );
         setUpColorPicker();
         root.getChildren().add(canvas);
         primaryStage.setScene(new Scene(root));

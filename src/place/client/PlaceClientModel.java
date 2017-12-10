@@ -11,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Observable;
+import static java.lang.Thread.sleep;
 
 public class PlaceClientModel extends Observable {
 
@@ -30,7 +31,7 @@ public class PlaceClientModel extends Observable {
             System.out.println("Getting output stream...");
             out = new ObjectOutputStream(conn.getOutputStream());
         } catch (IOException ioe) {
-            System.out.println(ioe.getMessage());
+            System.err.println(ioe);
         }
     }
 
@@ -39,11 +40,11 @@ public class PlaceClientModel extends Observable {
         System.out.println("Trying to login");
         try {
             System.out.println("Sending login request");
-            out.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, username));
+            out.writeUnshared(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, username));
             out.flush();
-            PlaceRequest<?> confirm = (PlaceRequest<?>) in.readObject();
+            PlaceRequest<?> confirm = (PlaceRequest<?>) in.readUnshared();
             if (confirm.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
-                PlaceRequest<?> boardData = (PlaceRequest<?>) in.readObject();
+                PlaceRequest<?> boardData = (PlaceRequest<?>) in.readUnshared();
                 if (boardData.getType() == PlaceRequest.RequestType.BOARD) {
                     board = (PlaceBoard)boardData.getData();
                     System.out.println("Successfully logged in!");
@@ -61,28 +62,35 @@ public class PlaceClientModel extends Observable {
 
     public void logoff() {
         try {
+            PlaceRequest<String> logout = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "log off" + username);
+            out.writeUnshared(logout);
             in.close();
             out.close();
             conn.close();
         } catch (IOException ioe) {
-            System.out.println(ioe.getMessage());
+            System.err.println(ioe);
         }
     }
 
     public void sendTileChange(int row, int col, PlaceColor color) {
         PlaceTile toPlace = new PlaceTile(row, col, username, color);
+        board.setTile(toPlace);
         PlaceRequest<PlaceTile> tileChange = new PlaceRequest<>(PlaceRequest.RequestType.CHANGE_TILE, toPlace);
         try {
-            out.writeObject(tileChange);
+            out.writeUnshared(tileChange);
             out.flush();
+            sleep(500);
         } catch (IOException ioe) {
-            System.out.println("Failed to write tile: " + ioe.getMessage());
+            System.err.println("Failed to write tile: " + ioe.getMessage());
+        } catch (InterruptedException ie) {
+            System.err.println("Sleep failed");
         }
+
     }
 
     private void run() {
         try {
-            PlaceRequest<?> req = (PlaceRequest<?>) in.readObject();
+            PlaceRequest<?> req = (PlaceRequest<?>) in.readUnshared();
             while (conn.isConnected() && req.getType() != PlaceRequest.RequestType.ERROR) {
                 if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
                     PlaceTile changedTile = (PlaceTile) req.getData();
@@ -90,13 +98,13 @@ public class PlaceClientModel extends Observable {
                     setChanged();
                     notifyObservers(changedTile);
                 }
-                PlaceRequest<?> newReq = (PlaceRequest<?>) in.readObject();
+                PlaceRequest<?> newReq = (PlaceRequest<?>) in.readUnshared();
                 if (newReq.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
                     req = newReq;
                 }
             }
         } catch (IOException | ClassNotFoundException ioe) {
-            System.out.println(ioe);
+            System.out.println("Successfully logged out " + username);
         }
     }
 
