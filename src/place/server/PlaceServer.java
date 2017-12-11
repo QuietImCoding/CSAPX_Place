@@ -33,6 +33,10 @@ public class PlaceServer implements Closeable{
         }
 
     }
+
+    /**
+     * accepts connections and starts a thread
+     */
     public void run() {
             while (true) {
                 try{
@@ -44,6 +48,13 @@ public class PlaceServer implements Closeable{
             }
 
     }
+
+    /**
+     * is called when the thread receives a login request
+     * @param username: username requested by the client
+     * @param o: output stream of the PlaceClientThread
+     * @return: returns true if logging in was successful, false if unsuccessful (there is already someone online with that name)
+     */
     public synchronized boolean login(String username, ObjectOutputStream o) {
         for(String key : clients.keySet()){
             if (key.equals(username))
@@ -76,6 +87,12 @@ public class PlaceServer implements Closeable{
         } catch (IOException ioe) {
         }
     }
+
+    /**
+     *
+     * @param args: the port of the server and the dimensions of the board
+     * @throws PlaceException
+     */
     public static void main(String[] args) throws PlaceException {
         if (args.length != 2) {
             System.exit(1);
@@ -88,19 +105,41 @@ public class PlaceServer implements Closeable{
             e.printStackTrace();
         }
     }
+
+    /**
+     * called when a Tile_Change request comes in from the client
+     * adds the time the change is made to the tile, changes the tile, then calls sendTile
+     * @param tile: the tile that is being changed
+     */
     public synchronized void tileChange(PlaceTile tile){
         tile.setTime(System.currentTimeMillis());
         board.setTile(tile);
         System.out.println("tile changed");
         sendTile(tile);
     }
+
+    /**
+     * called when the thread's board needs to be updated
+     * @return the server board
+     */
     public PlaceBoard getBoard(){
         return board;
     }
+
+    /**
+     * updates the clients map when a client is loggin off
+     * @param username: client to be removed from the clients map
+     */
     public synchronized void updateClients(String username){
         clients.remove(username);
-        System.out.println(username + " removed. Online: "+ clients.keySet());
+        System.out.println(username + " has logged off. Online: "+ clients.keySet());
     }
+
+    /**
+     * is called after a tile has been changed
+     * sends everyone in client app the changed tile
+     * @param tile: the tile that has been changed
+     */
     public void sendTile(PlaceTile tile){
         for (String username:clients.keySet()
              ) {

@@ -17,21 +17,13 @@ public class PlaceClientThread implements Runnable, Closeable {
     private ObjectOutputStream out;
     private PlaceBoard board;
     private PlaceServer server;
-//    public PlaceClientThread(String hostname, int port, PlaceBoard model){
-//
-//        try{
-//            this.sock = new Socket( hostname, port );
-//            this.scanner = new Scanner( sock.getInputStream() );
-//            this.printer = new PrintStream( sock.getOutputStream() );
-//            this.board = model;
-//            printer.print( "Connected to server " + this.sock );
-//            Thread netThread = new Thread( () -> this.run() );
-//            netThread.start();
-//        }catch(Exception e){
-//
-//        }
-//    }
 
+    /**
+     * sets up the input and output streams as well as the board and username
+     * @param socket: the client socket
+     * @param username: the client's username
+     * @param server: the server
+     */
     public PlaceClientThread(Socket socket, String username, PlaceServer server){
         this.sock = socket;
         this.username = username;
@@ -47,7 +39,9 @@ public class PlaceClientThread implements Runnable, Closeable {
     }
 
 
-
+    /**
+     * receives all the requests from the client and informs the of server what to do
+     */
     public void run(){
         try{
             PlaceRequest<?> req;
@@ -84,12 +78,6 @@ public class PlaceClientThread implements Runnable, Closeable {
                         case ERROR:{
                            close();
                         }
-//                        default: {
-//                            req = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "???");
-//                            System.out.println("to "+username+": " +req);
-//                            out.writeObject(req);
-//                            out.flush();
-//                        }
                     }
 
                 }catch(Exception e){
@@ -101,6 +89,9 @@ public class PlaceClientThread implements Runnable, Closeable {
             }
         }catch(Exception e){}
     }
+    /**
+     * tells the server to remove the client's username from the list of usernames then closes the socket
+     */
     public void close(){
         try{
 
