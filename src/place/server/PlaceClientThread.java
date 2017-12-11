@@ -36,7 +36,7 @@ public class PlaceClientThread implements Runnable, Closeable {
         this.sock = socket;
         this.username = username;
         System.out.println("User " + username +" connected on socket "+sock);
-        this.board = board;
+        this.board = server.getBoard();
         this.server = server;
         try {
             this.out = new ObjectOutputStream(sock.getOutputStream());
@@ -45,71 +45,66 @@ public class PlaceClientThread implements Runnable, Closeable {
         catch (IOException e) {
         }
     }
-    public void addBoard(PlaceBoard board){
-        this.board = board;
-    }
-    public void changed(PlaceTile tile){
-        PlaceRequest<PlaceTile> tileChange = new PlaceRequest<>(PlaceRequest.RequestType.CHANGE_TILE, tile);
-        try{
-            out.writeObject(tileChange);
-            out.flush();
-        }catch(IOException e){
 
-        }
-    }
-
-    public ObjectOutputStream getOut() {
-        return out;
-    }
 
 
     public void run(){
         try{
-            boolean listening = true;
             PlaceRequest<?> req;
-            while(listening){
+            PlaceRequest<?> serv;
+            while(true){
                 try{
                     req = (PlaceRequest<?>)in.readObject();
 
-                System.out.println(req);
-                PlaceRequest.RequestType type = req.getType();
-                System.out.println(type);
-                switch(type) {
-                    case LOGIN: {
-                        username = (String) req.getData();
-                        server.login(username, out);
-                        req = new PlaceRequest<>(PlaceRequest.RequestType.BOARD, board);
-                        out.writeObject(req);
-                        out.flush();
-                    }
-                    case CHANGE_TILE: {
-                        server.tileChange((PlaceTile) req.getData());
-                        board = server.getBoard();
+                    System.out.println(req);
+                    PlaceRequest.RequestType type = req.getType();
+                    switch(type) {
+                        case LOGIN: {
+                            username = (String) req.getData();
+                            if(server.login(username, out)) {
+                                board = server.getBoard();
+                                serv = new PlaceRequest<>(PlaceRequest.RequestType.BOARD, board);
+                                out.writeObject(serv);
+                                out.flush();
+                            }
+                            else{
+                                sock.close();
+                            }
+
+                            break;
+                        }
+                        case CHANGE_TILE: {
+                            server.tileChange((PlaceTile) req.getData());
+                            board = server.getBoard();
+                            Thread.sleep(500);
+                            break;
 
 
+                        }
+                        case ERROR:{
+                           close();
+                        }
+//                        default: {
+//                            req = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "???");
+//                            System.out.println("to "+username+": " +req);
+//                            out.writeObject(req);
+//                            out.flush();
+//                        }
                     }
-                    case ERROR:{
-                        server.updateClients(username);
-                        close();
-                    }
-                    default: {
-                        req = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "???");
-                        out.writeObject(req);
-                        out.flush();
-                    }
-                }
 
                 }catch(Exception e){
 
                 }
+                if(!sock.isConnected()){
+                    close();
+                }
             }
         }catch(Exception e){}
     }
-    public void start(){
-        this.run();
-    }
     public void close(){
         try{
+
+            server.updateClients(username);
             this.sock.close();
         }catch(Exception e){
         }

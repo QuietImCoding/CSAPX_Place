@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+//:)
+
 public class PlaceServer implements Closeable{
     private Map<String, ObjectOutputStream> clients;
     private ServerSocket server;
@@ -23,6 +25,7 @@ public class PlaceServer implements Closeable{
         try {
             this.server = new ServerSocket(port);
             clients = new HashMap<>();
+            board = new PlaceBoard(dim);
 
 
         } catch (IOException e) {
@@ -31,13 +34,9 @@ public class PlaceServer implements Closeable{
 
     }
     public void run() {
-            board = new PlaceBoard(dim);
-            boolean listening = true;
-            while (listening) {
+            while (true) {
                 try{
-                    PlaceClientThread client = new PlaceClientThread(server.accept(), "", this);
-                    client.addBoard(board);
-                    client.start();
+                    new Thread( new PlaceClientThread(server.accept(), "", this)).start();
                 }catch(Exception e){
 
                 }
@@ -45,25 +44,29 @@ public class PlaceServer implements Closeable{
             }
 
     }
-    public synchronized void login(String username, ObjectOutputStream o){
-        Iterator it = clients.keySet().iterator();
-        while(it.hasNext()) {
-            if (it.next() == username)
+    public synchronized boolean login(String username, ObjectOutputStream o) {
+        for(String key : clients.keySet()){
+            if (key.equals(username))
                 try{
+                PlaceRequest<?> err = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Login failed. There is another user with that name.");
                     o.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Login failed. There is another user with that name."));
                     o.flush();
+                    System.out.println(err + (username));
+                    return false;
                 }catch(Exception e){
 
                 }
+
         }
         clients.put(username,o);
-        System.out.println("Success!");
+        System.out.println("Success! Current clients: "+ clients.keySet());
         try{
             o.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN_SUCCESS,"Welcome "+username));
             o.flush();
         }catch (Exception e){
 
         }
+        return true;
     }
     @Override
     public void close() throws IOException {
@@ -85,6 +88,7 @@ public class PlaceServer implements Closeable{
         }
     }
     public synchronized void tileChange(PlaceTile tile){
+        tile.setTime(System.currentTimeMillis());
         board.setTile(tile);
         System.out.println("tile changed");
         sendTile(tile);
@@ -94,17 +98,16 @@ public class PlaceServer implements Closeable{
     }
     public synchronized void updateClients(String username){
         clients.remove(username);
+        System.out.println(username + " removed. Online: "+ clients.keySet());
     }
     public void sendTile(PlaceTile tile){
-        Iterator it = clients.keySet().iterator();
-        while(it.hasNext()) {
+        for (String username:clients.keySet()
+             ) {
+            System.out.println("Sending " + tile + " to " + username);
             try {
-                String username = (String)it.next();
-                System.out.println("Sending " + tile + " to " + username);
                 clients.get(username).writeObject(new PlaceRequest<>(PlaceRequest.RequestType.TILE_CHANGED, tile));
                 clients.get(username).flush();
-            }
-            catch(Exception e){
+            }catch(Exception e){
 
         }
         }
