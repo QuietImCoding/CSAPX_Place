@@ -13,6 +13,10 @@ import java.net.Socket;
 import java.util.Observable;
 import static java.lang.Thread.sleep;
 
+/**
+ * Sets up, stores, and updates the model.
+ * Also implements methods to converse with the server
+ */
 public class PlaceClientModel extends Observable {
 
     private PlaceBoard board;
@@ -21,6 +25,13 @@ public class PlaceClientModel extends Observable {
     private ObjectInputStream in;
     private ObjectOutputStream out;
 
+    /**
+     * Where to set up communications from
+     * @param host the host to connect to
+     * @param port the port to connect to
+     * @param username the username to try to connect to
+     * @throws PlaceException When connection fails
+     */
     public PlaceClientModel(String host, int port, String username) throws PlaceException {
         this.username = username;
         try {
@@ -36,7 +47,10 @@ public class PlaceClientModel extends Observable {
         }
     }
 
-
+    /**
+     * Login function sets up the board from the server
+     * @throws PlaceException when something goes wrong
+     */
     public void login() throws PlaceException {
         System.out.println("Trying to login");
         try {
@@ -59,11 +73,17 @@ public class PlaceClientModel extends Observable {
         }
     }
 
+    /**
+     * Starts the thread that reads from the server
+     */
     public void talkToServer() {
         Thread netThread = new Thread(this::run);
         netThread.start();
     }
 
+    /**
+     * Writes the disconnect message from the server and closes the network connections
+     */
     public void logoff() {
         try {
             PlaceRequest<String> logout = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "log off" + username);
@@ -76,6 +96,12 @@ public class PlaceClientModel extends Observable {
         }
     }
 
+    /**
+     * Sends the tile change to the server
+     * @param row the row to create the tile at
+     * @param col the colum to create the tile at
+     * @param color the color of the tile
+     */
     public void sendTileChange(int row, int col, PlaceColor color) {
         PlaceTile toPlace = new PlaceTile(row, col, username, color);
         board.setTile(toPlace);
@@ -92,6 +118,9 @@ public class PlaceClientModel extends Observable {
 
     }
 
+    /**
+     * The loop that gets the updates from the server and notifies observers
+     */
     private void run() {
         PlaceRequest<?> req;
         try {
@@ -111,12 +140,14 @@ public class PlaceClientModel extends Observable {
         } catch (IOException | ClassNotFoundException ioe) {
             if (conn.isClosed()) {
                 System.out.println("Successfully logged out " + username);
-            } else {
-
             }
         }
     }
 
+    /**
+     * Returns the board.
+     * @return the. board.
+     */
     public PlaceBoard getBoard() {
         return board;
     }

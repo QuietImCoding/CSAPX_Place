@@ -2,6 +2,9 @@ package place.client.ptui;
 
 import place.PlaceException;
 
+/**
+ * Class that is run to start the ptui
+ */
 public class PlacePTUI {
     public static void main(String[] args) {
         if (args.length < 3) {
@@ -16,6 +19,7 @@ public class PlacePTUI {
             System.out.println("Typing 'move <row> <col> <color> will place a tile at that spot with that color");
             System.out.println("Colors should be numbers 0 - 15");
 
+            // Main loop that gets input
             boolean running = true;
             while (running) {
                 running = client.getUserInput();

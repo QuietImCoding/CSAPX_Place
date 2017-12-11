@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+/**
+ * The GUI client
+ */
 public class PlaceGUI extends Application implements Observer {
 
     private PlaceClientModel model;
@@ -32,6 +35,9 @@ public class PlaceGUI extends Application implements Observer {
     private boolean holdingTile;
     private double mouseX, mouseY;
 
+    /**
+     * Initializes variables
+     */
     @Override
     public void init() {
         List<String> args = getParameters().getRaw();
@@ -40,6 +46,7 @@ public class PlaceGUI extends Application implements Observer {
         String username = args.get(2);
         curColor = PlaceColor.WHITE;
         holdingTile = false;
+        // Tries to set up model
         try {
             model = new PlaceClientModel(host, port, username);
             model.addObserver(this);
@@ -55,6 +62,10 @@ public class PlaceGUI extends Application implements Observer {
         }
     }
 
+    /**
+     * Draws the frame by redrawing the model and adding the infobox if neccessary
+     * also draws the tile if you're holding it
+     */
     private void drawFrame() {
         drawModel();
         if (holdingTile) {
@@ -66,6 +77,9 @@ public class PlaceGUI extends Application implements Observer {
         }
     }
 
+    /**
+     * Displays the box with information about the tile you're hovering over
+     */
     private void showInfoBox() {
         double infoBoxX;
         double infoBoxWidth = dim / 4;
@@ -89,15 +103,20 @@ public class PlaceGUI extends Application implements Observer {
         gc.fillText(dateFormat.format(toInspect.getTime()), infoBoxX + (5 * infoBoxWidth / 12), infoBoxY + (3 * infoBoxHeight / 4), infoBoxWidth / 2);
     }
 
+    /**
+     * Converts a place color to an RGB paint color
+     * @param c the placecolor to convert
+     * @return a paint color usable by the graphicscontext
+     */
     private Color convertColorToRGB(PlaceColor c) {
-        try {
-            return Color.rgb(c.getRed(), c.getGreen(), c.getBlue());
-        } catch (ClassCastException cce) {
-            System.out.println("yikes");
-            return Color.RED;
-        }
+        return Color.rgb(c.getRed(), c.getGreen(), c.getBlue());
     }
 
+    /**
+     * What to do when we get an update from the model
+     * @param o the model
+     * @param arg the argument if it's passed by the model
+     */
     @Override
     public void update(Observable o, Object arg) {
         if (gc != null && o instanceof PlaceClientModel && arg instanceof PlaceTile) {
@@ -106,12 +125,19 @@ public class PlaceGUI extends Application implements Observer {
         }
     }
 
+    /**
+     * Draws the tile on the screen
+     * @param t the placetile to draw
+     */
     private void drawTile(PlaceTile t) {
         PlaceColor fill = t.getColor();
         gc.setFill(Color.rgb(fill.getRed(), fill.getGreen(), fill.getBlue()));
         gc.fillRect(t.getCol() * tileWidth, t.getRow() * tileWidth, tileWidth, tileWidth);
     }
 
+    /**
+     * Draws the entire place board
+     */
     private void drawModel() {
         for (int x = 0; x < boardDim; x++) {
             for (int y = 0; y < boardDim; y++) {
@@ -123,16 +149,31 @@ public class PlaceGUI extends Application implements Observer {
         }
     }
 
+    /**
+     * Sends a tile to the server
+     * @param row the row to create the tile at
+     * @param col the colum to create the tile at
+     */
     private void sendTile(int row, int col) {
         model.sendTileChange(row, col, curColor);
     }
 
+    /**
+     * Figures out where in the board to send tiles to based on mouse x and y
+     * Surprisingly worked the first time
+     * @param x the x coordinate in the canvas
+     * @param y the y coordinate in the canvas
+     * @return an integer array with the indecies in board
+     */
     private int[] findTileTarget(double x, double y) {
         int tileX = (int) Math.floor(x / tileWidth);
         int tileY = (int) Math.floor(y / tileWidth);
         return new int[]{tileY, tileX};
     }
 
+    /**
+     * draws the color picker at the bottom of the window
+     */
     private void setUpColorPicker() {
         double pickWidth = dim / 16;
         for (int x = 0; x < PlaceColor.TOTAL_COLORS; x++) {
@@ -142,12 +183,21 @@ public class PlaceGUI extends Application implements Observer {
         }
     }
 
+    /**
+     * Picks a color based on the x coordinate
+     * @param x the x coordinate of the mouse presumably
+     */
     private void pickColor(double x) {
         float pickWidth = dim / 16;
         int colorNum = (int) Math.floor(x / pickWidth);
         curColor = PlaceColor.values()[colorNum];
     }
 
+    /**
+     * Starts the application
+     * @param primaryStage ¯\_(ツ)_/¯
+     * @throws Exception ¯\_(ツ)_/¯
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Drawing Operations Test");
@@ -173,7 +223,7 @@ public class PlaceGUI extends Application implements Observer {
                     mouseY = t.getY();
                     try {
                         drawFrame();
-                    } catch (ArrayIndexOutOfBoundsException aioobe) {
+                    } catch (ArrayIndexOutOfBoundsException ignored) {
 
                     }
                 }
@@ -184,6 +234,9 @@ public class PlaceGUI extends Application implements Observer {
         primaryStage.show();
     }
 
+    /**
+     * Logoff when window closed
+     */
     @Override
     public void stop() {
         model.logoff();
