@@ -6,10 +6,13 @@ import place.PlaceException;
 import place.PlaceTile;
 import place.network.PlaceRequest;
 
+import javax.jws.soap.SOAPBinding;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Observable;
 import static java.lang.Thread.sleep;
 
@@ -21,7 +24,7 @@ public class PlaceClientModel extends Observable {
     private ObjectInputStream in;
     private ObjectOutputStream out;
 
-    public PlaceClientModel(String host, int port, String username) {
+    public PlaceClientModel(String host, int port, String username) throws PlaceException {
         this.username = username;
         try {
             conn = new Socket(host, port);
@@ -31,7 +34,9 @@ public class PlaceClientModel extends Observable {
             System.out.println("Getting output stream...");
             out = new ObjectOutputStream(conn.getOutputStream());
         } catch (IOException ioe) {
-            System.err.println(ioe);
+            System.out.println("Something went wrong");
+            System.out.println("Consider changing your username");
+            throw new PlaceException("Connection Failed");
         }
     }
 
@@ -51,7 +56,7 @@ public class PlaceClientModel extends Observable {
                 }
             }
         } catch (IOException | ClassNotFoundException ioe) {
-            throw new PlaceException("Login failed");
+            throw new PlaceException("Login Failed");
         }
     }
 
@@ -89,8 +94,9 @@ public class PlaceClientModel extends Observable {
     }
 
     private void run() {
+        PlaceRequest<?> req;
         try {
-            PlaceRequest<?> req = (PlaceRequest<?>) in.readUnshared();
+            req = (PlaceRequest<?>) in.readUnshared();
             while (conn.isConnected() && req.getType() != PlaceRequest.RequestType.ERROR) {
                 if (req.getType() == PlaceRequest.RequestType.TILE_CHANGED) {
                     PlaceTile changedTile = (PlaceTile) req.getData();
@@ -104,7 +110,11 @@ public class PlaceClientModel extends Observable {
                 }
             }
         } catch (IOException | ClassNotFoundException ioe) {
-            System.out.println("Successfully logged out " + username);
+            if (conn.isClosed()) {
+                System.out.println("Successfully logged out " + username);
+            } else {
+
+            }
         }
     }
 

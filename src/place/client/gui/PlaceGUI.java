@@ -40,22 +40,23 @@ public class PlaceGUI extends Application implements Observer {
         String username = args.get(2);
         curColor = PlaceColor.WHITE;
         holdingTile = false;
-        model = new PlaceClientModel(host, port, username);
-        model.addObserver(this);
-        dim = 512;
         try {
+            model = new PlaceClientModel(host, port, username);
+            model.addObserver(this);
+            dim = 512;
             model.login();
+            model.talkToServer();
         } catch (PlaceException pe) {
-            System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
+            System.out.println("Connection issue. Shutting down...");
+            System.exit(1);
         }
-        model.talkToServer();
     }
 
     private void drawFrame() {
         drawModel();
         if (holdingTile) {
             gc.setFill(convertColorToRGB(curColor));
-            gc.fillRect(mouseX, mouseY, tileWidth, tileWidth);
+            gc.fillRect(mouseX - (tileWidth / 2), mouseY - (tileWidth / 2), tileWidth, tileWidth);
             setUpColorPicker();
         } else if (mouseY < dim) {
             showInfoBox();
@@ -84,6 +85,7 @@ public class PlaceGUI extends Application implements Observer {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         gc.fillText(dateFormat.format(toInspect.getTime()), infoBoxX + (5 * infoBoxWidth / 12), infoBoxY + (3 * infoBoxHeight / 4), infoBoxWidth / 2);
     }
+
     private Color convertColorToRGB(PlaceColor c) {
         return Color.rgb(c.getRed(), c.getGreen(), c.getBlue());
     }
@@ -91,6 +93,7 @@ public class PlaceGUI extends Application implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (o instanceof PlaceClientModel && arg instanceof PlaceTile) {
+            drawTile((PlaceTile)arg);
             board = model.getBoard();
         }
     }
@@ -103,9 +106,9 @@ public class PlaceGUI extends Application implements Observer {
     }
 
     private void drawModel() {
-        for ( double x = 0; x < boardDim; x++ ) {
-            for ( double y = 0; y < boardDim; y++) {
-                PlaceTile toDraw = board.getTile((int)x, (int)y);
+        for (int x = 0; x < boardDim; x++) {
+            for (int y = 0; y < boardDim; y++) {
+                PlaceTile toDraw = board.getTile( y,  x);
                 PlaceColor fill = toDraw.getColor();
                 gc.setFill(Color.rgb(fill.getRed(), fill.getGreen(), fill.getBlue()));
                 gc.fillRect(x * tileWidth, y * tileWidth, tileWidth, tileWidth);
@@ -118,16 +121,15 @@ public class PlaceGUI extends Application implements Observer {
     }
 
     private int[] findTileTarget(double x, double y) {
-        int tileX = (int)Math.floor(x / tileWidth);
-        int tileY = (int)Math.floor(y / tileWidth);
-        return new int[] {tileX, tileY};
+        int tileX = (int) Math.floor(x / tileWidth);
+        int tileY = (int) Math.floor(y / tileWidth);
+        return new int[]{tileY, tileX};
     }
 
     private void setUpColorPicker() {
-        float pickWidth = dim / 16;
+        double pickWidth = dim / 16;
         for (int x = 0; x < PlaceColor.TOTAL_COLORS; x++) {
             PlaceColor fillColor = PlaceColor.values()[x];
-
             gc.setFill(Color.rgb(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue()));
             gc.fillRect(x * pickWidth, dim, pickWidth, dim / PlaceColor.TOTAL_COLORS);
         }
@@ -135,7 +137,7 @@ public class PlaceGUI extends Application implements Observer {
 
     private void pickColor(double x) {
         float pickWidth = dim / 16;
-        int colorNum = (int)Math.floor(x / pickWidth);
+        int colorNum = (int) Math.floor(x / pickWidth);
         curColor = PlaceColor.values()[colorNum];
     }
 
@@ -143,11 +145,11 @@ public class PlaceGUI extends Application implements Observer {
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Drawing Operations Test");
         Group root = new Group();
-        Canvas canvas = new Canvas(dim , dim + 32);
+        Canvas canvas = new Canvas(dim, dim + 32);
         gc = canvas.getGraphicsContext2D();
         board = model.getBoard();
         boardDim = board.DIM;
-        tileWidth = dim / boardDim;
+        tileWidth = (double)dim / (double)boardDim;
         drawModel();
         canvas.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 t -> {
@@ -155,22 +157,21 @@ public class PlaceGUI extends Application implements Observer {
                         int[] target = findTileTarget(t.getX(), t.getY());
                         sendTile(target[0], target[1]);
                         holdingTile = false;
-                    }
-                    else {
+                    } else {
                         pickColor(t.getX());
-                        holdingTile = true;
+                        holdingTile = !holdingTile;
                     }
                 });
         canvas.addEventHandler(MouseEvent.MOUSE_MOVED,
-            t -> {
-                mouseX = t.getX();
-                mouseY = t.getY();
-                try {
-                    drawFrame();
-                } catch (ArrayIndexOutOfBoundsException aioobe) {
-
+                t -> {
+                    mouseX = t.getX();
+                    mouseY = t.getY();
+                    try {
+                        drawFrame();
+                    } catch (ArrayIndexOutOfBoundsException aioobe) {
+                        System.out.println("This probably shouldn't happen");
+                    }
                 }
-            }
         );
         setUpColorPicker();
         root.getChildren().add(canvas);

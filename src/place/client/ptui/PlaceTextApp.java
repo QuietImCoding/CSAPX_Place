@@ -13,16 +13,21 @@ public class PlaceTextApp implements Observer {
     private final Scanner userIn;
     private final PlaceClientModel model;
 
-    public PlaceTextApp(String host, int port, String username) {
-       model = new PlaceClientModel(host, port, username);
-       model.addObserver(this);
-       userIn = new Scanner(System.in);
-       try {
+    public PlaceTextApp(String host, int port, String username) throws PlaceException{
+        try {
+            model = new PlaceClientModel(host, port, username);
+            model.addObserver(this);
+            userIn = new Scanner(System.in);
             model.login();
+            model.talkToServer();
         } catch (PlaceException pe) {
-            System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
+            if (pe.getMessage().equals("Login Failed")) {
+                System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
+            } else if (pe.getMessage().equals("Connection Failed")) {
+                System.out.println("Connection failed");
+            }
+            throw new PlaceException("Initialization Failed");
         }
-        model.talkToServer();
     }
 
     private void sendMove(String row, String col, String color) throws PlaceException{
@@ -54,9 +59,10 @@ public class PlaceTextApp implements Observer {
             display();
             System.out.println();
             return true;
-        } else if (tokens[0].equals("move") && tokens.length == 3) {
+        } else if (tokens[0].equals("move") && tokens.length == 4) {
             try {
-                sendMove(tokens[0], tokens[1], tokens[2]);
+                sendMove(tokens[1], tokens[2], tokens[3]);
+                return true;
             } catch (PlaceException pe) {
                 System.out.println(pe.getMessage());
             }
