@@ -32,8 +32,6 @@ public class PlaceClientModel extends Observable {
             System.out.println("Getting output stream...");
 
         } catch (IOException ioe) {
-            System.out.println("Something went wrong");
-            System.out.println("Consider changing your username");
             throw new PlaceException("Connection Failed");
         }
     }
@@ -46,6 +44,9 @@ public class PlaceClientModel extends Observable {
             out.writeUnshared(new PlaceRequest<>(PlaceRequest.RequestType.LOGIN, username));
             out.flush();
             PlaceRequest<?> confirm = (PlaceRequest<?>) in.readUnshared();
+            if(confirm.getType() == PlaceRequest.RequestType.ERROR) {
+                throw new PlaceException("Login Failed");
+            }
             if (confirm.getType() == PlaceRequest.RequestType.LOGIN_SUCCESS) {
                 PlaceRequest<?> boardData = (PlaceRequest<?>) in.readUnshared();
                 if (boardData.getType() == PlaceRequest.RequestType.BOARD) {

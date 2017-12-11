@@ -23,6 +23,7 @@ public class PlaceTextApp implements Observer {
         } catch (PlaceException pe) {
             if (pe.getMessage().equals("Login Failed")) {
                 System.out.println("Unable to login with username: " + username + " at " + host + ":" + port);
+                System.out.println("Consider a different username");
             } else if (pe.getMessage().equals("Connection Failed")) {
                 System.out.println("Connection failed");
             }

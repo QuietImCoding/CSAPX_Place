@@ -48,6 +48,7 @@ public class PlaceServer implements Closeable{
         for(String key : clients.keySet()){
             if (key.equals(username))
                 try{
+                //o.close();
                 PlaceRequest<?> err = new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Login failed. There is another user with that name.");
                     o.writeObject(new PlaceRequest<>(PlaceRequest.RequestType.ERROR, "Login failed. There is another user with that name."));
                     o.flush();

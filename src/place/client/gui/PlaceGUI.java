@@ -162,7 +162,7 @@ public class PlaceGUI extends Application implements Observer {
                         int[] target = findTileTarget(t.getX(), t.getY());
                         sendTile(target[0], target[1]);
                         holdingTile = false;
-                    } else {
+                    } else if (t.getY() > dim){
                         pickColor(t.getX());
                         holdingTile = !holdingTile;
                     }
