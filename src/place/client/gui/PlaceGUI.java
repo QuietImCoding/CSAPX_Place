@@ -45,6 +45,9 @@ public class PlaceGUI extends Application implements Observer {
             model.addObserver(this);
             dim = 512;
             model.login();
+            board = model.getBoard();
+            boardDim = board.DIM;
+            tileWidth = (double)dim / (double)boardDim;
             model.talkToServer();
         } catch (PlaceException pe) {
             System.out.println("Connection issue. Shutting down...");
@@ -87,19 +90,23 @@ public class PlaceGUI extends Application implements Observer {
     }
 
     private Color convertColorToRGB(PlaceColor c) {
-        return Color.rgb(c.getRed(), c.getGreen(), c.getBlue());
+        try {
+            return Color.rgb(c.getRed(), c.getGreen(), c.getBlue());
+        } catch (ClassCastException cce) {
+            System.out.println("yikes");
+            return Color.RED;
+        }
     }
 
     @Override
     public void update(Observable o, Object arg) {
-        if (o instanceof PlaceClientModel && arg instanceof PlaceTile) {
+        if (gc != null && o instanceof PlaceClientModel && arg instanceof PlaceTile) {
             drawTile((PlaceTile)arg);
             board = model.getBoard();
         }
     }
 
     private void drawTile(PlaceTile t) {
-        tileWidth = dim / boardDim;
         PlaceColor fill = t.getColor();
         gc.setFill(Color.rgb(fill.getRed(), fill.getGreen(), fill.getBlue()));
         gc.fillRect(t.getCol() * tileWidth, t.getRow() * tileWidth, tileWidth, tileWidth);
@@ -147,13 +154,11 @@ public class PlaceGUI extends Application implements Observer {
         Group root = new Group();
         Canvas canvas = new Canvas(dim, dim + 32);
         gc = canvas.getGraphicsContext2D();
-        board = model.getBoard();
-        boardDim = board.DIM;
-        tileWidth = (double)dim / (double)boardDim;
+
         drawModel();
         canvas.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 t -> {
-                    if (t.getY() < dim) {
+                    if (t.getY() < dim && holdingTile) {
                         int[] target = findTileTarget(t.getX(), t.getY());
                         sendTile(target[0], target[1]);
                         holdingTile = false;
@@ -169,7 +174,7 @@ public class PlaceGUI extends Application implements Observer {
                     try {
                         drawFrame();
                     } catch (ArrayIndexOutOfBoundsException aioobe) {
-                        System.out.println("This probably shouldn't happen");
+
                     }
                 }
         );

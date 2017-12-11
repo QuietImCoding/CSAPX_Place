@@ -6,13 +6,10 @@ import place.PlaceException;
 import place.PlaceTile;
 import place.network.PlaceRequest;
 
-import javax.jws.soap.SOAPBinding;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Observable;
 import static java.lang.Thread.sleep;
 
@@ -28,11 +25,12 @@ public class PlaceClientModel extends Observable {
         this.username = username;
         try {
             conn = new Socket(host, port);
-            System.out.println("Setting up sockets");
+            System.out.println("Setting up socket");
             System.out.println("Getting input stream...");
+            out = new ObjectOutputStream(conn.getOutputStream());
             in = new ObjectInputStream(conn.getInputStream());
             System.out.println("Getting output stream...");
-            out = new ObjectOutputStream(conn.getOutputStream());
+
         } catch (IOException ioe) {
             System.out.println("Something went wrong");
             System.out.println("Consider changing your username");
