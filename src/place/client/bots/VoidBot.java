@@ -7,6 +7,8 @@ import place.client.PlaceClientModel;
 
 import java.util.ArrayList;
 
+import static java.lang.Thread.sleep;
+
 
 public class VoidBot {
 
@@ -17,25 +19,33 @@ public class VoidBot {
             return;
         }
         try {
+            ArrayList<PlaceClientModel> voidBots = new ArrayList<>();
             PlaceClientModel model = new PlaceClientModel(args[0], Integer.parseInt(args[1]), "VoidBot");
             model.login();
             PlaceBoard b = model.getBoard();
-            int row = 0;
-            int col = 0;
-            while (true) {
-                if (row == b.DIM) {
-                    col++;
-                    row = 0;
+            model.logoff();
+            for (int i = 0; i < b.DIM; i++) {
+                try {
+                    System.out.println("Preparing VoidBot" + i);
+                    PlaceClientModel voidBot = new PlaceClientModel(args[0], Integer.parseInt(args[1]), "VoidBoot" + i);
+                    sleep(1000);
+                    voidBots.add(voidBot);
+                    voidBot.login();
+                } catch (PlaceException | InterruptedException eee) {
+                    System.out.println("VoidBot" + i + " is out of the running");
                 }
-                if (col == b.DIM) {
-                    col = 0;
+            }
+            for (int row = 0; row < b.DIM; row++) {
+                for (int i = 0; i < voidBots.size(); i++) {
+                    voidBots.get(i).sendTileChange(row, i, PlaceColor.BLACK);
                 }
-                model.sendTileChange(row, col, PlaceColor.BLACK);
-                row++;
-                System.out.println("VoidBot is at row " + row + " and col " + col);
+                System.out.println("VoidBots are at row " + row);
+            }
+            for (PlaceClientModel voidBot : voidBots) {
+                voidBot.logoff();
             }
         } catch (PlaceException pe) {
-            System.out.println("Connection failed. VoidBot is sad");
+            System.out.println("initial board fetch failed");
         }
     }
 

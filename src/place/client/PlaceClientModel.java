@@ -109,12 +109,13 @@ public class PlaceClientModel extends Observable {
         try {
             out.writeUnshared(tileChange);
             out.flush();
-            sleep(500);
+            //sleep(500);
         } catch (IOException ioe) {
             System.err.println("Failed to write tile: " + ioe.getMessage());
-        } catch (InterruptedException ie) {
-            System.err.println("Sleep failed");
         }
+//        catch (InterruptedException ie) {
+//            System.err.println("Sleep failed");
+//        }
 
     }
 

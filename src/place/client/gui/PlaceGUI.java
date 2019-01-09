@@ -1,6 +1,7 @@
 package place.client.gui;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -120,7 +121,7 @@ public class PlaceGUI extends Application implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         if (gc != null && o instanceof PlaceClientModel && arg instanceof PlaceTile) {
-            drawTile((PlaceTile)arg);
+            Platform.runLater(() -> drawTile((PlaceTile)arg));
             board = model.getBoard();
         }
     }
@@ -208,7 +209,7 @@ public class PlaceGUI extends Application implements Observer {
         drawModel();
         canvas.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 t -> {
-                    if (t.getY() < dim && holdingTile) {
+                    if (t.getY() <= dim && holdingTile) {
                         int[] target = findTileTarget(t.getX(), t.getY());
                         sendTile(target[0], target[1]);
                         holdingTile = false;
@@ -222,7 +223,7 @@ public class PlaceGUI extends Application implements Observer {
                     mouseX = t.getX();
                     mouseY = t.getY();
                     try {
-                        drawFrame();
+                        Platform.runLater(() -> drawFrame());
                     } catch (ArrayIndexOutOfBoundsException ignored) {
 
                     }
